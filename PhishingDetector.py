@@ -1,7 +1,26 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import requests
+import re
 
+def check_numbers_in_uri(uri):
+
+    # Regular expression to match any digit (0-9) in the URI
+    digit_pattern = re.compile(r'\d')
+
+    if digit_pattern.search(uri):
+        return (
+            "Caution: The URI contains numbers. "
+            "When checking links, be mindful of unusual elements like numbers in the URL. "
+            "Links with numbers might indicate suspicious activity. "
+            "Exercise caution and consider verifying the source before clicking such links."
+        )
+    else:
+        return (
+            "Tip: When checking links, pay attention to the structure of the URL. "
+            "Unusual elements or unexpected characters may indicate potential risks. "
+            "The current URI is free from numbers, but it's always good practice to stay vigilant when navigating the web."
+        )
 
 def check_url_threat(uri, api_key):
     # API url
@@ -35,12 +54,16 @@ def check_url_threat(uri, api_key):
             # Check for specific threat types
             if 'MALWARE' in threat_types:
                 response_message += "Alert: The URL is identified as MALWARE. Malware can harm your device. Avoid clicking on the link to protect your data and device."
+                response_message += "\n"+check_numbers_in_uri(uri)
             elif 'SOCIAL_ENGINEERING' in threat_types:
                 response_message += "Caution: The URL is identified as a SOCIAL ENGINEERING threat. Social engineering attempts to manipulate you. Do not proceed to the website and report the link."
+                response_message += "\n"+check_numbers_in_uri(uri)
             elif 'UNWANTED_SOFTWARE' in threat_types:
                 response_message += "Warning: The URL is identified as UNWANTED SOFTWARE. Unwanted software can be harmful. Avoid interacting with the link to ensure your device's security."
+                response_message += "\n"+check_numbers_in_uri(uri)
             elif 'SOCIAL_ENGINEERING_EXTENDED_COVERAGE' in threat_types:
                 response_message += "Attention: The URL is identified as a SOCIAL ENGINEERING (Extended Coverage) threat. Be cautious and avoid the website. Report the link to prevent potential harm."
+                response_message += "\n"+check_numbers_in_uri(uri)
             else:
                 response_message += "The URL is safe from known threats."
 

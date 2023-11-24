@@ -57,14 +57,14 @@ def check_url_threat(uri, api_key):
                 response_message += "\n"+check_numbers_in_uri(uri)
             elif 'SOCIAL_ENGINEERING' in threat_types:
                 response_message += "Caution: The URL is identified as a SOCIAL ENGINEERING threat. Social engineering attempts to manipulate you. Do not proceed to the website and report the link."
-                response_message += "\n\n\n Social engineering is a manipulation technique that exploits human error to gain private information, access, or valuables.\n"
+                response_message += "\n\n Social engineering is a manipulation technique that exploits human error to gain private information, access, or valuables.\n"
                 response_message += "\n"+check_numbers_in_uri(uri)
             elif 'UNWANTED_SOFTWARE' in threat_types:
                 response_message += "Warning: The URL is identified as UNWANTED SOFTWARE. Unwanted software can be harmful. Avoid interacting with the link to ensure your device's security."
                 response_message += "\n"+check_numbers_in_uri(uri)
             elif 'SOCIAL_ENGINEERING_EXTENDED_COVERAGE' in threat_types:
                 response_message += "Attention: The URL is identified as a SOCIAL ENGINEERING (Extended Coverage) threat. Be cautious and avoid the website. Report the link to prevent potential harm."
-                response_message += "\n\n\n Social engineering is a manipulation technique that exploits human error to gain private information, access, or valuables.\n"
+                response_message += "\n\n Social engineering is a manipulation technique that exploits human error to gain private information, access, or valuables.\n"
                 response_message += "\n"+check_numbers_in_uri(uri)
             else:
                 response_message += "The URL is safe from known threats."

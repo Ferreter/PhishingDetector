@@ -4,7 +4,7 @@
 
 
 
-from telegram import Update
+from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, Updater, CallbackContext, filters
 import requests
 import re
@@ -72,10 +72,7 @@ ZH_MESSAGES = {
     
 }
 
-
 current_language = "en"  # Default to English
-
-
 
 def check_numbers_in_uri(uri):
     digit_pattern = re.compile(r'\d')
@@ -101,6 +98,95 @@ def check_numbers_in_uri(uri):
             else ZH_MESSAGES["uri_safe"]
         )
 
+def check_url_threat(uri, api_key):
+    url = 'https://webrisk.googleapis.com/v1/uris:search'
+
+    params = {
+        'threatTypes': ['SOCIAL_ENGINEERING', 'MALWARE', 'UNWANTED_SOFTWARE', 'SOCIAL_ENGINEERING_EXTENDED_COVERAGE'],
+        'uri': uri,
+        'key': api_key
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        
+        if 'threat' in data:
+            threat_types = data['threat']['threatTypes']
+            expire_time = data['threat']['expireTime']
+
+            response_message = ""
+
+            if 'MALWARE' in threat_types:
+                response_message += (
+                    EN_MESSAGES["malware_alert"]
+                    if current_language == "en"
+                    else FR_MESSAGES["malware_alert"]
+                    if current_language == "fr"
+                    else HI_MESSAGES["malware_alert"]
+                    if current_language == "hi"
+                    else ZH_MESSAGES["malware_alert"]
+                )
+                response_message += "\n\n"+check_numbers_in_uri(uri)
+            elif 'SOCIAL_ENGINEERING' in threat_types:
+                response_message += (
+                    EN_MESSAGES["social_engineering_caution"]
+                    if current_language == "en"
+                    else FR_MESSAGES["social_engineering_caution"]
+                    if current_language == "fr"
+                    else HI_MESSAGES["social_engineering_caution"]
+                    if current_language == "hi"
+                    else ZH_MESSAGES["social_engineering_caution"]
+                )
+                response_message += "\n\n"+check_numbers_in_uri(uri)
+            elif 'UNWANTED_SOFTWARE' in threat_types:
+                response_message += (
+                    EN_MESSAGES["unwanted_software_warning"]
+                    if current_language == "en"
+                    else FR_MESSAGES["unwanted_software_warning"]
+                    if current_language == "fr"
+                    else HI_MESSAGES["unwanted_software_warning"]
+                    if current_language == "hi"
+                    else ZH_MESSAGES["unwanted_software_warning"]
+                )
+                response_message += "\n\n"+check_numbers_in_uri(uri)
+            elif 'SOCIAL_ENGINEERING_EXTENDED_COVERAGE' in threat_types:
+                response_message += (
+                    EN_MESSAGES["social_engineering_extended_caution"]
+                    if current_language == "en"
+                    else FR_MESSAGES["social_engineering_extended_caution"]
+                    if current_language == "fr"
+                    else HI_MESSAGES["social_engineering_extended_caution"]
+                    if current_language == "hi"
+                    else ZH_MESSAGES["social_engineering_extended_caution"]
+                )
+                response_message += "\n\n"+check_numbers_in_uri(uri)
+            else:
+                response_message += (
+                    EN_MESSAGES["no_threat_info"]
+                    if current_language == "en"
+                    else FR_MESSAGES["no_threat_info"]
+                    if current_language == "fr"
+                    else HI_MESSAGES["no_threat_info"]
+                    if current_language == "hi"
+                    else ZH_MESSAGES["no_threat_info"]
+                )
+
+            return response_message
+        else:
+            return (
+                EN_MESSAGES["no_threat_info"]
+                if current_language == "en"
+                else FR_MESSAGES["no_threat_info"]
+                if current_language == "fr"
+                else HI_MESSAGES["no_threat_info"]
+                if current_language == "hi"
+                else ZH_MESSAGES["no_threat_info"]
+            )
+    else:
+        return f"Error: {response.status_code}\n{response.text}"
+ 
 
 async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global current_language
@@ -137,6 +223,20 @@ async def check_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if url_to_check:
         response_message = check_url_threat(url_to_check, api_key)
+        if("कोई खतरा सूचना उपलब्ध नहीं" in response_message) or ("没有威胁信息可用。该URL不在任何威胁列表中" in response_message) or ("Aucune information sur la menace" in response_message) or ("No threat information available" in response_message):
+            # Replace 'path_to_image' with the actual path to the image file you want to send
+            path_to_image = 'media/images/authentic.png'
+
+            # Send the image as a reply to the user's message
+            with open(path_to_image, 'rb') as image_file:
+                await update.message.reply_photo(photo=InputFile(image_file))
+        else:
+            # Replace 'path_to_image' with the actual path to the image file you want to send
+            path_to_image = 'media/images/scam.png'
+
+            # Send the image as a reply to the user's message
+            with open(path_to_image, 'rb') as image_file:
+                await update.message.reply_photo(photo=InputFile(image_file))
     else:
         response_message = (
             EN_MESSAGES["provide_url"]
@@ -151,103 +251,16 @@ async def check_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(response_message)
 
 
-def check_url_threat(uri, api_key):
-    url = 'https://webrisk.googleapis.com/v1/uris:search'
-
-    params = {
-        'threatTypes': ['SOCIAL_ENGINEERING', 'MALWARE', 'UNWANTED_SOFTWARE', 'SOCIAL_ENGINEERING_EXTENDED_COVERAGE'],
-        'uri': uri,
-        'key': api_key
-    }
-
-    response = requests.get(url, params=params)
-
-    if response.status_code == 200:
-        data = response.json()
-        
-        if 'threat' in data:
-            threat_types = data['threat']['threatTypes']
-            expire_time = data['threat']['expireTime']
-
-            response_message = ""
-
-            if 'MALWARE' in threat_types:
-                response_message += (
-                    EN_MESSAGES["malware_alert"]
-                    if current_language == "en"
-                    else FR_MESSAGES["malware_alert"]
-                    if current_language == "fr"
-                    else HI_MESSAGES["malware_alert"]
-                    if current_language == "hi"
-                    else ZH_MESSAGES["malware_alert"]
-                )
-                response_message += "\n"+check_numbers_in_uri(uri)
-            elif 'SOCIAL_ENGINEERING' in threat_types:
-                response_message += (
-                    EN_MESSAGES["social_engineering_caution"]
-                    if current_language == "en"
-                    else FR_MESSAGES["social_engineering_caution"]
-                    if current_language == "fr"
-                    else HI_MESSAGES["social_engineering_caution"]
-                    if current_language == "hi"
-                    else ZH_MESSAGES["social_engineering_caution"]
-                )
-                response_message += "\n\n Social engineering is a manipulation technique that exploits human error to gain private information, access, or valuables.\n"
-                response_message += "\n"+check_numbers_in_uri(uri)
-            elif 'UNWANTED_SOFTWARE' in threat_types:
-                response_message += (
-                    EN_MESSAGES["unwanted_software_warning"]
-                    if current_language == "en"
-                    else FR_MESSAGES["unwanted_software_warning"]
-                    if current_language == "fr"
-                    else HI_MESSAGES["unwanted_software_warning"]
-                    if current_language == "hi"
-                    else ZH_MESSAGES["unwanted_software_warning"]
-                )
-                response_message += "\n"+check_numbers_in_uri(uri)
-            elif 'SOCIAL_ENGINEERING_EXTENDED_COVERAGE' in threat_types:
-                response_message += (
-                    EN_MESSAGES["social_engineering_extended_caution"]
-                    if current_language == "en"
-                    else FR_MESSAGES["social_engineering_extended_caution"]
-                    if current_language == "fr"
-                    else HI_MESSAGES["social_engineering_extended_caution"]
-                    if current_language == "hi"
-                    else ZH_MESSAGES["social_engineering_extended_caution"]
-                )
-                response_message += "\n\n Social engineering is a manipulation technique that exploits human error to gain private information, access, or valuables.\n"
-                response_message += "\n"+check_numbers_in_uri(uri)
-            else:
-                response_message += (
-                    EN_MESSAGES["no_threat_info"]
-                    if current_language == "en"
-                    else FR_MESSAGES["no_threat_info"]
-                    if current_language == "fr"
-                    else HI_MESSAGES["no_threat_info"]
-                    if current_language == "hi"
-                    else ZH_MESSAGES["no_threat_info"]
-                )
-
-            return response_message
-        else:
-            return (
-                EN_MESSAGES["no_threat_info"]
-                if current_language == "en"
-                else FR_MESSAGES["no_threat_info"]
-                if current_language == "fr"
-                else HI_MESSAGES["no_threat_info"]
-                if current_language == "hi"
-                else ZH_MESSAGES["no_threat_info"]
-            )
-    else:
-        return f"Error: {response.status_code}\n{response.text}"
-    
+   
 async def handle_text(update, context):
-    # Respond to any text message
+
+
+   
+    # Respond with a default message
     await update.message.reply_text("I received your message, but I'm not sure how to respond. \n\n You can use the following commands:\n"
-                "/hello - Greet the bot\n"
-                "/check URL - Check a URL for threats\n"
-                "/language [en/fr/hi/zh] - Set the bot's language (default: en)")
+            "/hello - Greet the bot\n"
+            "/check URL - Check a URL for threats\n"
+            "/language [en/fr/hi/zh] - Set the bot's language (default: en)")
 
 # Define your Webrisk API key
 api_key = 'AIzaSyBsO6OGeF6ZXsqPFwEsSWIsOYPjHIKoGpQ'
@@ -260,3 +273,4 @@ app.add_handler(CommandHandler("language", set_language))
 app.add_handler(MessageHandler(filters.TEXT, handle_text))
 
 app.run_polling()
+

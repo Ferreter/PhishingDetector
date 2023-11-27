@@ -5,12 +5,11 @@
 
 
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, Updater, CallbackContext
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, Updater, CallbackContext, filters
 import requests
 import re
 
 # Define language-specific message templates
-
 EN_MESSAGES = {
     "greeting": "Hello {first_name}. Welcome to the Phishing Detector bot. You can use the following commands:\n"
                 "/hello - Greet the bot\n"
@@ -70,15 +69,14 @@ ZH_MESSAGES = {
     "no_threat_info": "没有威胁信息可用。该URL不在任何威胁列表中。请谨慎行事。\n\n请记住：每天都会出现新的威胁，尽管Google的Webrisk列表定期更新，但仍有可能存在威胁。",
     "uri_contains_numbers": "警告：URI中包含数字。在检查链接时，请注意URL中的数字等异常元素。带有数字的链接可能表示可疑活动。在单击此类链接之前要谨慎，考虑验证来源。",
     "uri_safe": "提示：在检查链接时，请注意URL的结构。异常元素或意外字符可能表示潜在风险。当前的URI不包含数字，但在浏览网络时保持警惕始终是一个好习惯。",
-    # Add more Mandarin messages here
+    
 }
 
 
-# Create a variable to store the current language
 current_language = "en"  # Default to English
 
 
-# Modify the check_numbers_in_uri function to use language-specific messages
+
 def check_numbers_in_uri(uri):
     digit_pattern = re.compile(r'\d')
 
@@ -103,7 +101,7 @@ def check_numbers_in_uri(uri):
             else ZH_MESSAGES["uri_safe"]
         )
 
-# Modify the /language command handler to allow users to switch languages
+
 async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global current_language
     text = context.args[0].lower() if context.args else ""
@@ -119,7 +117,6 @@ async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     
     await update.message.reply_text("Language set to " + current_language.upper())
 
-# Modify the hello function to use language-specific messages
 async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     greeting_message = (
@@ -133,7 +130,7 @@ async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     await update.message.reply_text(greeting_message.format(first_name=user.first_name))
 
-# Modify the check_url function to use language-specific messages
+
 async def check_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     url_to_check = context.args[0] if context.args else None
@@ -153,7 +150,7 @@ async def check_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text(response_message)
 
-# Modify the check_url_threat function to use language-specific messages
+
 def check_url_threat(uri, api_key):
     url = 'https://webrisk.googleapis.com/v1/uris:search'
 
@@ -244,15 +241,22 @@ def check_url_threat(uri, api_key):
             )
     else:
         return f"Error: {response.status_code}\n{response.text}"
+    
+async def handle_text(update, context):
+    # Respond to any text message
+    await update.message.reply_text("I received your message, but I'm not sure how to respond. \n\n You can use the following commands:\n"
+                "/hello - Greet the bot\n"
+                "/check URL - Check a URL for threats\n"
+                "/language [en/fr/hi/zh] - Set the bot's language (default: en)")
+
 # Define your Webrisk API key
 api_key = 'AIzaSyBsO6OGeF6ZXsqPFwEsSWIsOYPjHIKoGpQ'
 
-# Create the application and add handlers
 app = ApplicationBuilder().token("6635501788:AAHEEP3hFf57zLZfH-XsqvcjNcRuzep0e_0").build()
 
 app.add_handler(CommandHandler("hello", hello))
 app.add_handler(CommandHandler("check", check_url))
 app.add_handler(CommandHandler("language", set_language))
+app.add_handler(MessageHandler(filters.TEXT, handle_text))
 
-# Run the bot
 app.run_polling()

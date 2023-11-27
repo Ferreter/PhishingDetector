@@ -5,14 +5,17 @@
 
 
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, Updater, CallbackContext
 import requests
 import re
 
 # Define language-specific message templates
 
 EN_MESSAGES = {
-    "greeting": "Hello {first_name}",
+    "greeting": "Hello {first_name}. Welcome to the Phishing Detector bot. You can use the following commands:\n"
+                "/hello - Greet the bot\n"
+                "/check URL - Check a URL for threats\n"
+                "/language [en/fr/hi/zh] - Set the bot's language (default: en)",
     "provide_url": "Please provide a URL to check. Use **/check URL_GOES_HERE**",
     "malware_alert": "**Alert**: The URL is identified as **MALWARE**. Malware can harm your device. Avoid clicking on the link to protect your data and device.",
     "social_engineering_caution": "**Caution**: The URL is identified as a **SOCIAL ENGINEERING** threat. Social engineering attempts to manipulate you. Do not proceed to the website and report the link.",
@@ -24,7 +27,10 @@ EN_MESSAGES = {
 }
 
 FR_MESSAGES = {
-    "greeting": "Bonjour {first_name}",
+    "greeting": "Bonjour {first_name}. Bienvenue sur le bot Phishing Detector. Vous pouvez utiliser les commandes suivantes :\n"
+                "/hello - Saluer le bot\n"
+                "/check URL - Vérifier une URL pour les menaces\n"
+                "/language [en/fr/hi/zh] - Définir la langue du bot (par défaut : en)",
     "provide_url": "Veuillez fournir une URL à vérifier. Utilisez **/check URL_ICI**",
     "malware_alert": "**Alerte** : L'URL est identifiée comme **MALVEILLANTE**. Les logiciels malveillants peuvent endommager votre appareil. Évitez de cliquer sur le lien pour protéger vos données et votre appareil.",
     "social_engineering_caution": "**Mise en garde** : L'URL est identifiée comme une menace d'**INGÉNIERIE SOCIALE**. L'ingénierie sociale tente de vous manipuler. Ne continuez pas vers le site web et signalez le lien.",
@@ -37,7 +43,10 @@ FR_MESSAGES = {
 
 
 HI_MESSAGES = {
-    "greeting": "नमस्ते {first_name}",
+    "greeting": "नमस्ते {first_name}. फिशिंग डिटेक्टर बॉट में आपका स्वागत है। आप निम्नलिखित कमांड्स का उपयोग कर सकते हैं:\n"
+                "/hello - बॉट को नमस्कार कहें\n"
+                "/check URL - URL की खतरों की जाँच करें\n"
+                "/language [en/fr/hi/zh] - बॉट की भाषा सेट करें (डिफ़ॉल्ट: en)",
     "provide_url": "कृपया जांच करने के लिए एक URL प्रदान करें। **/check URL_GOES_HERE** का उपयोग करें",
     "malware_alert": "**चेतावनी:** URL को **MALWARE** के रूप में पहचाना गया है। मैलवेयर आपके डिवाइस को हानि पहुंचा सकता है। अपने डेटा और डिवाइस की सुरक्षा के लिए लिंक पर क्लिक करने से बचें।",
     "social_engineering_caution": "**सतर्कता:** URL को **सामाजिक इंजीनियरिंग** खतरा के रूप में पहचाना गया है। सामाजिक इंजीनियरिंग आपको मानव त्रुटि का उपयोग करके मनिपुरित करने का प्रयास करता है। वेबसाइट पर आगे न बढ़ें और लिंक की सूचना दें।",
@@ -49,7 +58,10 @@ HI_MESSAGES = {
 }
 
 ZH_MESSAGES = {
-    "greeting": "你好 {first_name}",
+    "greeting": "你好 {first_name}。欢迎使用网络钓鱼检测器机器人。您可以使用以下命令：\n"
+                "/hello - 与机器人打招呼\n"
+                "/check URL - 检查URL是否存在威胁\n"
+                "/language [en/fr/hi/zh] - 设置机器人的语言（默认：en）",
     "provide_url": "请提供要检查的URL。使用 /check URL_HERE",
     "malware_alert": "警告：URL被识别为MALWARE。恶意软件可能会损害您的设备。请避免单击链接以保护您的数据和设备。",
     "social_engineering_caution": "注意：URL被识别为社交工程威胁。社交工程试图操纵您。不要继续访问网站并报告链接。",

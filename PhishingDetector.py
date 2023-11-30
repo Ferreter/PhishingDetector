@@ -1,9 +1,3 @@
-
-#'AIzaSyBsO6OGeF6ZXsqPFwEsSWIsOYPjHIKoGpQ'
-#6635501788:AAHEEP3hFf57zLZfH-XsqvcjNcRuzep0e_0
-
-
-
 from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, Updater, CallbackContext, filters
 import requests
@@ -263,9 +257,9 @@ async def handle_text(update, context):
             "/language [en/fr/hi/zh] - Set the bot's language (default: en)")
 
 # Define your Webrisk API key
-api_key = 'AIzaSyBsO6OGeF6ZXsqPFwEsSWIsOYPjHIKoGpQ'
+api_key = 'YOUR_GOOGLE_API_KEY'
 
-app = ApplicationBuilder().token("6635501788:AAHEEP3hFf57zLZfH-XsqvcjNcRuzep0e_0").build()
+app = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
 
 app.add_handler(CommandHandler("hello", hello))
 app.add_handler(CommandHandler("check", check_url))
